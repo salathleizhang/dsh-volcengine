@@ -1,0 +1,9 @@
+node_modules/
+/lib/
+*.log
+.env
+.DS_Store
+package-lock.json
+pnpm-lock.yaml
+*.tsbuildinfo
+*.tgz

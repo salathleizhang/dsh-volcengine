@@ -1,0 +1,53 @@
+# dsh-volcengine bundle patch.
+#
+# Applied after the base bundle, this layer does two things:
+#
+# 1. Mounts the `dsh-volcengine` plugin, which registers the model-facing
+#    tools (`volcengine_chat`, `volcengine_image_generate`).
+# 2. Configures the bundled `@deepseek-ai/dsh-llm-pi-ai` adapter with a
+#    `volcengine` provider route so Ark models join the model picker and can
+#    drive the agent.
+#
+# The `model` ids below are illustrative: replace them with your own 接入点 ID
+# (`ep-xxx`) or 模型 ID from the Volcano Ark console. A patch replaces a row's
+# whole `config`, so overriding `llm-pi-ai` here replaces any composition-level
+# provider list — the user-settings `llm-pi-ai:` section still merges per
+# provider on top of this.
+
+- insert:
+    - id: volcengine
+      name: dsh-volcengine
+      config:
+        apiKeyEnv: ARK_API_KEY
+        baseURL: https://ark.cn-beijing.volces.com/api/v3
+        chatModel: deepseek-v3-250324
+        imageModel: doubao-seedream-4-0-250828
+
+- id: llm-pi-ai
+  config:
+    providers:
+      volcengine:
+        displayName: Volcano Ark
+        apiKeyEnv: ARK_API_KEY
+        api: openai-completions
+        baseURL: https://ark.cn-beijing.volces.com/api/v3
+        # Ark's URL is not recognized by pi-ai, so its reasoning dialect must be
+        # stated: DeepSeek-style `reasoning_content`.
+        compat:
+          thinkingFormat: deepseek
+        models:
+          - id: deepseek-r1-250120
+            name: DeepSeek-R1
+            contextWindow: 65536
+            reasoningEfforts:
+              off:
+              high: high
+          - id: deepseek-v3-250324
+            name: DeepSeek-V3
+            contextWindow: 65536
+          - id: doubao-seed-1-6-250615
+            name: Doubao-Seed-1.6
+            contextWindow: 200000
+          - id: doubao-1-5-pro-32k-250115
+            name: Doubao-1.5-Pro-32K
+            contextWindow: 32768
