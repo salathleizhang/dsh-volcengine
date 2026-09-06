@@ -4,9 +4,23 @@
 #
 # 1. Mounts the `dsh-volcengine` plugin, which registers the model-facing
 #    tools (`volcengine_chat`, `volcengine_image_generate`).
-# 2. Configures the bundled `@deepseek-ai/dsh-llm-pi-ai` adapter with a
-#    `volcengine` provider route so Ark models join the model picker and can
-#    drive the agent.
+# 2. Configures the bundled `@deepseek-ai/dsh-llm-pi-ai` adapter with two
+#    Volcano Ark provider routes so Ark models join the model picker and can
+#    drive the agent:
+#      - `volcengine`         — pay-as-you-go `/api/v3` endpoint
+#        (DeepSeek / GLM / Doubao Seed — the full chat-model catalog).
+#      - `volcengine-coding`  — Coding Plan `/api/coding/v3` endpoint
+#        (Kimi / MiniMax; requires the separate Coding Plan subscription key).
+#
+# IMPORTANT — reasoning models are deliberately NOT declared here. pi-ai's
+# `supportsDeveloperRole` auto-detection marks Ark's URL as supporting the
+# `developer` message role, but Ark accepts only `system` / `assistant` /
+# `user` / `tool`. pi-ai sends the system prompt as a `developer` message only
+# for *reasoning* models (`model.reasoning && supportsDeveloperRole`), so a
+# model declared with `reasoningEfforts` here gets a `400 InvalidParameter` on
+# every agent request. Declaring no reasoning metadata makes each model report
+# as non-reasoning, which routes the system prompt through `system` (accepted)
+# while the provider's own default thinking behavior still applies on the wire.
 #
 # The `model` ids below are illustrative: replace them with your own 接入点 ID
 # (`ep-xxx`) or 模型 ID from the Volcano Ark console. A patch replaces a row's
@@ -20,34 +34,102 @@
       config:
         apiKeyEnv: ARK_API_KEY
         baseURL: https://ark.cn-beijing.volces.com/api/v3
-        chatModel: deepseek-v3-250324
+        chatModel: deepseek-v4-pro-ga-260813
         imageModel: doubao-seedream-4-0-250828
 
 - id: llm-pi-ai
   config:
     providers:
+      # ---- Pay-as-you-go Ark endpoint (https://ark.cn-beijing.volces.com/api/v3) ----
+      # Full chat-model catalog per brand on the standard OpenAI-compatible
+      # endpoint. All entries are plain (non-reasoning) declarations — see the
+      # IMPORTANT note above.
       volcengine:
         displayName: Volcano Ark
         apiKeyEnv: ARK_API_KEY
         api: openai-completions
         baseURL: https://ark.cn-beijing.volces.com/api/v3
-        # Ark's URL is not recognized by pi-ai, so its reasoning dialect must be
-        # stated: DeepSeek-style `reasoning_content`.
-        compat:
-          thinkingFormat: deepseek
         models:
-          - id: deepseek-r1-250120
-            name: DeepSeek-R1
-            contextWindow: 65536
-            reasoningEfforts:
-              off:
-              high: high
-          - id: deepseek-v3-250324
-            name: DeepSeek-V3
-            contextWindow: 65536
-          - id: doubao-seed-1-6-250615
+          # ---- DeepSeek (深度求索) ----
+          - id: deepseek-v4-pro-ga-260813
+            name: DeepSeek-V4-Pro
+            contextWindow: 1000000
+          - id: deepseek-v4-flash-ga-260731
+            name: DeepSeek-V4-Flash
+            contextWindow: 1000000
+          # ---- Zhipu GLM (智谱) ----
+          - id: glm-5-2-260617
+            name: GLM-5.2
+            contextWindow: 1000000
+          # ---- Doubao Seed (豆包) — multimodal (text+image) ----
+          - id: doubao-seed-2-1-pro-260628
+            name: Doubao-Seed-2.1-Pro
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-2-1-turbo-260628
+            name: Doubao-Seed-2.1-Turbo
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-evolving
+            name: Doubao-Seed-Evolving
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-2-0-pro-260215
+            name: Doubao-Seed-2.0-Pro
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-2-0-lite-260428
+            name: Doubao-Seed-2.0-Lite
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-2-0-mini-260428
+            name: Doubao-Seed-2.0-Mini
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-2-0-code-preview-260215
+            name: Doubao-Seed-2.0-Code
+            contextWindow: 262144
+            input: [text, image]
+          - id: doubao-seed-1-8-251228
+            name: Doubao-Seed-1.8
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-1-6-251015
             name: Doubao-Seed-1.6
-            contextWindow: 200000
-          - id: doubao-1-5-pro-32k-250115
-            name: Doubao-1.5-Pro-32K
-            contextWindow: 32768
+            contextWindow: 256000
+          - id: doubao-seed-1-6-flash-250828
+            name: Doubao-Seed-1.6-Flash
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-1-6-vision-250815
+            name: Doubao-Seed-1.6-Vision
+            contextWindow: 256000
+            input: [text, image]
+          - id: doubao-seed-character-260628
+            name: Doubao-Seed-Character
+            contextWindow: 256000
+            input: [text, image]
+      # ---- Volcano Ark Coding Plan endpoint (https://ark.cn-beijing.volces.com/api/coding/v3) ----
+      # Adds the brands the pay-as-you-go endpoint does not serve (Kimi / MiniMax).
+      # Requires the separate Coding Plan subscription: set its key in
+      # ARK_CODING_API_KEY. A pay-as-you-go ARK_API_KEY will not work here.
+      volcengine-coding:
+        displayName: Volcano Ark Coding Plan
+        apiKeyEnv: ARK_CODING_API_KEY
+        api: openai-completions
+        baseURL: https://ark.cn-beijing.volces.com/api/coding/v3
+        models:
+          # ---- Moonshot Kimi (月之暗面) ----
+          - id: kimi-k2.6
+            name: Kimi-K2.6
+            contextWindow: 262144
+            input: [text, image]
+          - id: kimi-k2.7-code
+            name: Kimi-K2.7-Code
+            contextWindow: 262144
+            input: [text, image]
+          # ---- MiniMax (稀宇) ----
+          - id: minimax-m3
+            name: MiniMax-M3
+            contextWindow: 512000
+            input: [text, image]
