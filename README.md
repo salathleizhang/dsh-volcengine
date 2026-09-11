@@ -2,7 +2,7 @@
 
 DeepSeek Harness 的火山引擎（Volcano Engine / 火山方舟 Ark）插件组合包（bundle）。一个项目，两件事：
 
-1. **调用模型** —— 通过 `cordis.patch.yml` 把内置的 `@deepseek-ai/dsh-llm-pi-ai` 配出两条 provider 路由，让火山方舟的模型进入模型选择器，直接驱动 agent：`volcengine`（按量付费 `/api/v3`，DeepSeek / GLM / 豆包 Doubao）与 `volcengine-coding`（方舟 Coding Plan `/api/coding/v3`，Kimi / MiniMax）。
+1. **调用模型** —— 通过 `cordis.patch.yml` 把内置的 `@deepseek-ai/dsh-llm-pi-ai` 配出两条 provider 路由，让火山方舟的模型进入模型选择器，直接驱动 agent：`volcengine`（按量付费 `/api/v3`，DeepSeek / GLM / 豆包 Doubao）与 `volcengine-coding`（方舟 Coding Plan `/api/coding/v3`，Kimi / MiniMax / GLM）。
 2. **调用具体服务** —— 挂载本包自带的工具插件，用裸 `fetch` 调方舟的 OpenAI 兼容端点：
 
 | 工具 | 作用 | 端点 |
@@ -81,6 +81,7 @@ API key 与模型 id 都在 `cordis.patch.yml` 的 `volcengine` 行里配置，�
 | DeepSeek 深度求索 | `deepseek-v4-pro-ga-260813` | DeepSeek-V4-Pro | 1M | 文本 |
 | DeepSeek 深度求索 | `deepseek-v4-flash-ga-260731` | DeepSeek-V4-Flash | 1M | 文本 |
 | 智谱 Zhipu | `glm-5-2-260617` | GLM-5.2 | 1M | 文本 |
+| 智谱 Zhipu | `glm-5-3-flash-260828` | GLM-5.3-Flash | 1M | 文本 + 图片 |
 | 豆包 Doubao | `doubao-seed-2-1-pro-260628` | Doubao-Seed-2.1-Pro | 256K | 文本 + 图片 |
 | 豆包 Doubao | `doubao-seed-2-1-turbo-260628` | Doubao-Seed-2.1-Turbo | 256K | 文本 + 图片 |
 | 豆包 Doubao | `doubao-seed-evolving` | Doubao-Seed-Evolving | 256K | 文本 + 图片 |
@@ -96,13 +97,14 @@ API key 与模型 id 都在 `cordis.patch.yml` 的 `volcengine` 行里配置，�
 
 ### `volcengine-coding` — 方舟 Coding Plan `/api/coding/v3`
 
-Kimi / MiniMax 只通过 Coding Plan 订阅提供（需单独的 plan 密钥）：
+Kimi / MiniMax / GLM 只通过 Coding Plan 订阅提供（需单独的 plan 密钥）：
 
 | 品牌 | 模型 ID | 名称 | 上下文 | 输入 |
 |---|---|---|---|---|
 | Kimi 月之暗面 | `kimi-k2.6` | Kimi-K2.6 | 262K | 文本 + 图片 |
 | Kimi 月之暗面 | `kimi-k2.7-code` | Kimi-K2.7-Code | 262K | 文本 + 图片 |
 | MiniMax 稀宇 | `minimax-m3` | MiniMax-M3 | 512K | 文本 + 图片 |
+| 智谱 Zhipu | `glm-5.3-flash` | GLM-5.3-Flash | 1M | 文本 + 图片 |
 
 > 模型 id 只是示例，**务必换成你账号里实际可用的 id / 接入点 `ep-xxx`**（尤其按量付费路由，模型随方舟上下架会变）。
 
