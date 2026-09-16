@@ -10,7 +10,7 @@ DeepSeek Harness 的火山引擎（Volcano Engine / 火山方舟 Ark）插件组
 | `volcengine_chat` | 调用任意方舟模型做一次性补全（文本 / 推理 / 多模态视觉） | `POST /chat/completions` |
 | `volcengine_image_generate` | 文生图（豆包 Seedream / 即梦） | `POST /images/generations` |
 
-`volcengine_chat` 传 `images: [{ url }]` 即可把图片发给视觉模型（`url` 支持 http/https 或 `data:` URI），模型用豆包 Seed 多模态系列（如 `doubao-seed-2-1-pro-260628`，文本 + 图片输入）。
+`volcengine_chat` 传 `images: [{ url }]` 即可把图片发给视觉模型（`url` 支持 http/https 或 `data:` URI）：豆包 Seed 多模态系列（如 `doubao-seed-2-1-pro-260628`）或 DeepSeek V4.1-Flash（`deepseek-v4-1-flash-260910`，原生视觉理解）都可以。
 
 ## 为什么不用火山官方 SDK
 
@@ -78,6 +78,7 @@ API key 与模型 id 都在 `cordis.patch.yml` 的 `volcengine` 行里配置，�
 
 | 品牌 | 模型 ID | 名称 | 上下文 | 输入 |
 |---|---|---|---|---|
+| DeepSeek 深度求索 | `deepseek-v4-1-flash-260910` | DeepSeek-V4.1-Flash | 1M | 文本 + 图片 |
 | DeepSeek 深度求索 | `deepseek-v4-pro-ga-260813` | DeepSeek-V4-Pro | 1M | 文本 |
 | DeepSeek 深度求索 | `deepseek-v4-flash-ga-260731` | DeepSeek-V4-Flash | 1M | 文本 |
 | 智谱 Zhipu | `glm-5-2-260617` | GLM-5.2 | 1M | 文本 |

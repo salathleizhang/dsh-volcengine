@@ -51,6 +51,10 @@
         baseURL: https://ark.cn-beijing.volces.com/api/v3
         models:
           # ---- DeepSeek (深度求索) ----
+          - id: deepseek-v4-1-flash-260910
+            name: DeepSeek-V4.1-Flash
+            contextWindow: 1000000
+            input: [text, image]
           - id: deepseek-v4-pro-ga-260813
             name: DeepSeek-V4-Pro
             contextWindow: 1000000
