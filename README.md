@@ -46,6 +46,21 @@ dsh plugin --profile web add github:you/dsh-volcengine
 
 git 安装会跑 `prepare` 自动构建（pnpm ≥10 首次会要求 `allowBuilds`，按提示把 `dsh-volcengine: true` 写进 profile 的 `pnpm-workspace.yaml` 后重跑）。
 
+### 桌面 App（`desktop` profile）
+
+桌面 App 的插件页只收 npm registry 的包名（`packageNameFromSpec` 直接拒绝 `file:`、路径和 URL），本地 checkout 的 bundle 装不进去，要按 App 自己的校验规则手工装进 `~/.dsh/profiles/desktop`：
+
+1. `npm run build && npm pack`，把 tarball 放进 profile 的 `vendor/`。
+2. `package.json`：`dependencies` 必须是**精确版本**（`"dsh-volcengine": "0.2.3"`，即本包 `package.json` 的 `version`；`link:` / `file:` 会被 `projectManifest` 判为非法），`dsh.profile.bundles` 追加 `"dsh-volcengine"`。
+3. `pnpm-workspace.yaml` 加 `overrides` 把这个版本指到本地 tarball，再用 App 自带的 node/pnpm 跑一次 `pnpm install --ignore-scripts`；pnpm 会解出 `node_modules/dsh-volcengine` **真目录**（软链会被 `validateDesktopPluginGraph` 拒绝）并生成 `pnpm-lock.yaml`（App 将来重建 profile 时走 `--frozen-lockfile`）。
+4. 重启 App 生效。
+
+> 改了内容就要 bump 版本号：lockfile 用 sha512 钉住 tarball，同名覆盖会以 `ERR_PNPM_TARBALL_INTEGRITY` 拒绝（正是 App 重建 profile 走的那条路）。bump 后重新 `npm pack` 并重装，lock 会跟着更新。
+
+> `peerDependencies` 不能写 `"*"`：App 用 `semver.satisfies` 校验，prerelease 宿主（`0.1.0-rc.20`）不满足 `*`，整个 profile 会被 `requires @deepseek-ai/dsh-tools@*, found 0.1.0-rc.20` 拒绝启动。写 `">=0.1.0-rc.0"`。
+
+> 两个工具从 **`process.env`** 读 key（不吃托管凭据）：把 `ARK_API_KEY=...` 放进 `~/.dsh/.env`（App 启动时按 项目 `.env` > `~/.dsh/.env` 载入）。模型路由走托管凭据，`~/.dsh/.credentials.yaml` 里有 `ARK_API_KEY` 即可。
+
 ## 配置
 
 API key 与模型 id 都在 `cordis.patch.yml` 的 `volcengine` 行里配置，可用你自己 profile 的 `cordis.patch.yml` 覆盖：
