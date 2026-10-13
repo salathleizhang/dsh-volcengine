@@ -84,7 +84,7 @@ API key 与模型 id 都在 `cordis.patch.yml` 里配置，可用你自己 profi
         models: [ ... ]
       volcengine-agent-plan:
         displayName: Volcano Ark Agent Plan
-        apiKeyEnv: ARK_API_KEY           # 换成 ARK_AGENT_PLAN_API_KEY 即可用独立密钥
+        apiKeyEnv: ARK_AGENT_PLAN_API_KEY # Agent Plan 专属 key，和另两条不通用
         api: openai-responses
         baseURL: https://ark.cn-beijing.volces.com/api/plan/v3
         models: [ ... ]
@@ -97,17 +97,25 @@ API key 与模型 id 都在 `cordis.patch.yml` 里配置，可用你自己 profi
 ```
 
 - 优先用 `apiKeyEnv` 引用环境变量（不要写死 key）；紧急情况下可写 `apiKey`。
-- **一把 key 通吃**：账号级 API Key 在已订阅的每条路由上都能用，所以三条路由默认都读 `ARK_API_KEY`。要分 key 就把对应路由的 `apiKeyEnv` 改成 `ARK_AGENT_PLAN_API_KEY` / `ARK_CODING_API_KEY` 并在启动环境里导出。
+- **两套套餐是两套 key，不能混用**。实测：Agent Plan 的 key 在 `/api/plan/v3` 上是 200，在 `/api/coding/v3`、`/api/v3` 上是 401；而按量付费那把 key 反过来。所以：
+
+  | 路由 | 默认读的变量 | 说明 |
+  |---|---|---|
+  | `volcengine` | `ARK_API_KEY` | 按量付费后付费 key |
+  | `volcengine-agent-plan` | `ARK_AGENT_PLAN_API_KEY` | 在 Agent Plan 页面创建的专属 key |
+  | `volcengine-coding` | `ARK_API_KEY` | 你账号里带 Coding Plan 权益的那把；若是独立 key 就改指 `ARK_CODING_API_KEY` |
+
+- **401 不等于 key 写错了**：某条路由上没有权益时返回的也是 `401 AuthenticationError`（"The API key or AK/SK in the request is missing or invalid"），和 key 格式错误长得一样。先确认套餐订阅与 key 归属，再考虑轮换。
 - Tool 插件单独有一段 `volcengine` 行，配置 `chatModel` / `imageModel` 和它自己读的 `apiKeyEnv`（默认 `ARK_API_KEY`），`baseURL` 也可用 `ARK_BASE_URL` 覆盖。
 - **别串端点**：套餐模型必须走 `/api/plan/v3` 或 `/api/coding/v3`。把套餐模型指到 `/api/v3` 不会消耗套餐额度，而是按量计费；反过来后付费模型走套餐端点会 404/无权限。
 
 ### 拿到 API key 与模型 id
 
-1. 打开 [火山方舟控制台](https://console.volcengine.com/ark)，创建 **API Key**。key 是账号级的，能否用某条路由取决于账号是否订阅了对应套餐。
-2. 想用 Agent Plan：到 [开通管理-Agent Plan](https://ark.volcengine.com/region:cn-beijing/subscription/agent-plan) 订阅；专属入口也见 [Agent Plan 活动页](https://www.volcengine.com/activity/agentplan)。
-3. 想用 Coding Plan：到[方舟 Coding Plan 活动页](https://www.volcengine.com/activity/codingplan)订阅。
+1. 打开 [火山方舟控制台](https://console.volcengine.com/ark)。**每个套餐各自签发 key**，要用哪条路由就去对应页面的 API Key 处创建。
+2. 想用 Agent Plan：到 [开通管理-Agent Plan](https://ark.volcengine.com/region:cn-beijing/subscription/agent-plan) 订阅（专属入口也见 [Agent Plan 活动页](https://www.volcengine.com/activity/agentplan)），把它签发的 key 放进 `ARK_AGENT_PLAN_API_KEY`。
+3. 想用 Coding Plan：到[方舟 Coding Plan 活动页](https://www.volcengine.com/activity/codingplan)订阅，把 key 放进 `ARK_CODING_API_KEY`（或复用它所在的 `ARK_API_KEY`）。
 4. 模型 id 用本包预填的 **Model Name**（`deepseek-v4.1-flash` 这类），也可以换成控制台里的 **接入点 ID**（形如 `ep-2024xxxxxxxx-xxxxx`）。
-5. 套餐端点会随账号订阅状态变化：没订阅 Agent Plan 时用普通 key 请求 `/api/plan/v3` 会返回 `AuthenticationError`（"The API key or AK/SK in the request is missing or invalid"），而不是模型错误——先去订套餐。
+5. 订阅/换 key 之后如果仍 401，先分别单独打一次两个端点确认 key 与套餐的对应关系，再回头改配置。
 
 ### 官方文档
 

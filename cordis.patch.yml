@@ -23,11 +23,18 @@
 # `api: anthropic-messages`; this patch only configures the OpenAI-compatible
 # routes.
 #
-# KEY: one account API key works on every route whose plan the account has
-# subscribed to (verified against `/api/coding/v3` and `/api/v3` with one
-# key), so every route defaults to `ARK_API_KEY`. If you keep separate keys
-# per plan, change that route's `apiKeyEnv` to e.g. `ARK_AGENT_PLAN_API_KEY` /
-# `ARK_CODING_API_KEY` and export it.
+# KEYS: the two subscriptions issue SEPARATE credentials — a key is scoped to
+# its own plan endpoint. Verified against the live endpoints: an Agent Plan key
+# answers on `/api/plan/v3` and 401s on `/api/coding/v3` and `/api/v3`, while a
+# pay-as-you-go key answers on `/api/coding/v3` and `/api/v3` and 401s on
+# `/api/plan/v3`. So each subscription route reads its own reference:
+#   - `volcengine`            -> `ARK_API_KEY`            (pay-as-you-go)
+#   - `volcengine-agent-plan` -> `ARK_AGENT_PLAN_API_KEY` (Agent Plan 专属 key)
+#   - `volcengine-coding`     -> `ARK_API_KEY`            (the account key that
+#     carries the Coding Plan entitlement; point it at `ARK_CODING_API_KEY` if
+#     your Coding Plan key is a different one). A key without entitlement on a
+#     route fails with `401 AuthenticationError`, which reads exactly like a
+#     malformed key — check the subscription before rotating anything.
 #
 # API PROTOCOL: the subscription routes use `openai-responses`, which is what
 # Ark's own DeepSeek Harness guide configures and what Ark recommends for
@@ -158,7 +165,7 @@
       # `/images/generations`-style endpoints for those).
       volcengine-agent-plan:
         displayName: Volcano Ark Agent Plan
-        apiKeyEnv: ARK_API_KEY
+        apiKeyEnv: ARK_AGENT_PLAN_API_KEY
         api: openai-responses
         baseURL: https://ark.cn-beijing.volces.com/api/plan/v3
         models:
