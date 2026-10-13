@@ -1,6 +1,6 @@
 {
   "name": "dsh-volcengine",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "DeepSeek Harness bundle for Volcano Engine (火山引擎): Volcano Ark provider routes plus model-facing tools (volcengine_chat, volcengine_image_generate).",
   "type": "module",
   "main": "lib/index.mjs",
